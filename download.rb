@@ -1,23 +1,19 @@
 #!/usr/bin/env ruby
 
-require 'date'
-require "net/http"
+0.step(60,5) { |offset|
+  offset  = "0" + offset.to_s if offset < 10
+  
+  portion = ""
+  portion = "/(offset)/#{offset}" if offset != "00"
 
-today = Date.today
+  `wget -O M#{offset}.html "http://www.canalplus-maurice.com/grille-tv/toutes-les-chaines#{portion}"`
+}
 
-day   = today.day
-day   = "0" + day.to_s if day < 10
-month = today.month
-month = "0" + month.to_s if month < 10
-year  = today.year
+0.step(70,5) { |offset|
+  offset  = "0" + offset.to_s if offset < 10
+  
+  portion = ""
+  portion = "/(offset)/#{offset}" if offset != "00"
 
-File.open("channels.txt").each { |line|
-  part = line.chomp.split
-  channel = part[0]
-
-  puts "Downloading channel #{channel}..."
-
-  url = "http://www.canalsat-maurice.com/no_cache/guide-des-programmes/guide-des-programmes/programmes-jour-par-jour/?programme[jour]=#{day}%2F#{month}%2F#{year}&programme[horaires]=6.&programme[chaine]=#{channel}&programme[genre]=&Submit=OK&programme[pdf]="
-
-  `wget -O #{channel}.html "#{url}"` 
+  `wget -O R#{offset}.html "http://www.canalplus-reunion.com/grille-tv/toutes-les-chaines#{portion}"`
 }
