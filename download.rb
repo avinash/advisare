@@ -1,19 +1,16 @@
 #!/usr/bin/env ruby
 
-0.step(60,5) { |offset|
-  offset  = "0" + offset.to_s if offset < 10
-  
-  portion = ""
-  portion = "/(offset)/#{offset}" if offset != "00"
+def download(site, prefix, maxoffset)
+  0.step(maxoffset,5) { |offset|
+    offset  = "0" + offset.to_s if offset < 10
+    
+    portion = ""
+    portion = "/(offset)/#{offset}" if offset != "00"
 
-  `wget -O M#{offset}.html "http://www.canalplus-maurice.com/grille-tv/toutes-les-chaines#{portion}"`
-}
+    `wget -O #{prefix}#{offset}.html.gz --header="Accept-Encoding: gzip" "http://#{site}/grille-tv/toutes-les-chaines#{portion}"`
+    `gunzip -f #{prefix}#{offset}.html.gz`
+  }
+end
 
-0.step(70,5) { |offset|
-  offset  = "0" + offset.to_s if offset < 10
-  
-  portion = ""
-  portion = "/(offset)/#{offset}" if offset != "00"
-
-  `wget -O R#{offset}.html "http://www.canalplus-reunion.com/grille-tv/toutes-les-chaines#{portion}"`
-}
+download("www.canalplus-maurice.com", "M", 65)
+download("www.canalplus-reunion.com", "R", 70)

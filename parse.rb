@@ -1,9 +1,5 @@
 #!/usr/bin/env ruby
 
-package_mosaiqueplus = ["1", "4", "6", "7", "11", "12", "13", "15", "20", "25", "26", "29", "32", "33", "41", "45", "51", "55", "61", "63", "68", "85", "99", "100", "101"]
-package = package_mosaiqueplus
-channelsdone = []
-
 types = ["cinema", "decouverte", "divertissement", "jeunesse", "magazine", "musique", "series", "sport"]
 
 if (ARGV.length != 1) or (not types.include? ARGV[0]) then
@@ -25,80 +21,64 @@ if type == "cinema" then
   end
 end
 
-0.step(60,5) { |offset|
-  offset  = "0" + offset.to_s if offset < 10
-  file = "M#{offset}.html"
+class Parser
   
-  doc = Nokogiri::HTML(File.open(file), nil, "utf-8")
-  doc.css("div#listChaineGrilleTV").each { |allchannels|
-    allchannels.css("div.flt-l").each { |channel|
-      channelnumber = (channel.css("div.numero_canal").text.split)[1]
-      channelname   = channel.css("h2.channel-label").text
+  def initialize
+    package_mosaiqueplus =
+      ["1", "4", "6", "7", "11", "12", "13",
+       "15", "20", "25", "26", "29", "32", "33",
+       "41", "45", "51", "55", "61", "63", "68",
+       "85", "99", "100", "101"]
+    @package = package_mosaiqueplus
+    @channelsdone = []
+  end
 
-      if (not channelsdone.include? channelnumber) and (package.include? channelnumber)
-        channelsdone.push channelnumber
-      else
-        next
-      end
-      
-      channel.css("li.#{type}").each { |programme|
-        time = programme.css("span.inl").text
-        title = programme.css("strong").text
-        rating = "N/A"
-        url = ""
+  def parse(prefix, maximum, type)
+    0.step(maximum,5) { |offset|
+      offset  = "0" + offset.to_s if offset < 10
+      file = "#{prefix}#{offset}.html"
 
-        begin
-          if type == "cinema" then
-            movie = ImdbMovie.search(title + " intitle:imdb")
-            rating = movie.rating
-            rating = "N/A" if rating == 0.0
-            url = movie.url if rating != "N/A"
+      doc = Nokogiri::HTML(File.open(file), nil, "utf-8")
+      doc.css("div#listChaineGrilleTV").each { |allchannels|
+        allchannels.css("div.flt-l").each { |channel|
+          channelnumber = (channel.css("div.numero_canal").text.split)[1]
+          channelname   = channel.css("h2.channel-label").text
+
+          if (not @channelsdone.include? channelnumber) and (@package.include? channelnumber)
+            @channelsdone.push channelnumber
+          else
+            next
           end
-        rescue Exception
-        end
-        
-        puts "#{rating}\t#{channelnumber}\t#{time}\t#{url}\t#{channelname}\t#{title}"
-        $stdout.flush
+
+          channel.css("li.#{type}").each { |programme|
+            time = programme.css("span.inl").text
+            title = programme.css("strong").text
+            rating = "N/A"
+            url = ""
+
+            begin
+              if type == "cinema" then
+                query = title + " inurl:www.imdb.com/title/ intitle:IMDb"
+                movie = ImdbMovie.search(query)
+                rating = movie.rating
+                rating = "N/A" if rating == 0.0
+                url = movie.url if rating != "N/A"
+              end
+            rescue Exception
+            end
+
+            puts "#{rating}\t#{channelnumber}\t#{time}\t#{url}\t#{channelname}\t#{title}"
+            $stdout.flush
+
+            sleep 10
+          }
+        }
       }
     }
-  }
-}
+  end
 
-0.step(70,5) { |offset|
-  offset  = "0" + offset.to_s if offset < 10
-  file = "R#{offset}.html"
-  
-  doc = Nokogiri::HTML(File.open(file), nil, "utf-8")
-  doc.css("div#listChaineGrilleTV").each { |allchannels|
-    allchannels.css("div.flt-l").each { |channel|
-      channelnumber = (channel.css("div.numero_canal").text.split)[1]
-      channelname   = channel.css("h2.channel-label").text
+end
 
-      if (not channelsdone.include? channelnumber) and (package.include? channelnumber)
-        channelsdone.push channelnumber
-      else
-        next
-      end
-      
-      channel.css("li.#{type}").each { |programme|
-        time = programme.css("span.inl").text
-        title = programme.css("strong").text
-        rating = "N/A"
-        url = ""
-
-        begin
-          if type == "cinema" then
-            movie = ImdbMovie.search(title + " intitle:imdb")
-            rating = movie.rating
-            rating = "N/A" if rating == 0.0
-            url = movie.url if rating != "N/A"
-          end
-        rescue Exception
-        end
-        
-        puts "#{rating}\t#{channelnumber}\t#{time}\t#{url}\t#{channelname}\t#{title}"
-        $stdout.flush
-      }
-    }
-  }
-}
+parser = Parser.new
+parser.parse("M", 60, type)
+parser.parse("R", 70, type)
