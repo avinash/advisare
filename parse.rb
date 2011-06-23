@@ -7,13 +7,15 @@ if (ARGV.length != 1) or (not types.include? ARGV[0]) then
   puts "where type is one of #{types}"
   puts "IMDB will be queried when type is cinema"
   exit
-else
-  require "uri"
-  require "nokogiri"
-  require "open-uri"
-  require "rexml/document"
-  type = ARGV[0]
 end
+
+require "nokogiri"
+require "googleajax"
+require "open-uri"
+require "rexml/document"
+
+type = ARGV[0]
+GoogleAjax.referer = "www.noulakaz.net"
 
 class Movie
   def initialize(title)
@@ -22,10 +24,19 @@ class Movie
   end
   
   def query_imdb
-    title_escaped = URI.escape(@title)
-    response = open("http://www.imdbapi.com/?t=#{title_escaped}&r=XML")
-    doc = REXML::Document.new(response)
-    @movie = doc.root.elements["movie"] if doc.root != nil
+    # need to do a google search here to get the id of the movie
+    sleep 1
+    results = GoogleAjax::Search.web("#{@title} inurl:www.imdb.com/title/ intitle:IMDb")[:results]
+
+    # are there any results from google
+    if results != [] then
+      id = results[0][:url].split("/")[4]
+
+      # and get the rating using imdbapi
+      response = open("http://www.imdbapi.com/?i=#{id}&r=XML")
+      doc = REXML::Document.new(response)
+      @movie = doc.root.elements["movie"] if doc.root != nil
+    end
   end
   
   def rating
