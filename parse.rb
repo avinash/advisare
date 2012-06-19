@@ -9,6 +9,7 @@ if (ARGV.length != 1) or (not types.include? ARGV[0]) then
   exit
 end
 
+require "rubygems"
 require "nokogiri"
 require "googleajax"
 require "open-uri"
@@ -93,7 +94,7 @@ class Parser
         title = programme.css("strong").text
 
         rating = "N/A"
-        url = "N/A"
+        url = ""
 
         if type == "cinema" then
           movie = Movie.new(title)
